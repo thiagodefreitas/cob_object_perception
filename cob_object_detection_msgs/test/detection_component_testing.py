@@ -158,8 +158,6 @@ class TestObjectDetection(unittest.TestCase):
 			
 			bagPath = roslib.packages.get_pkg_dir(self.PKG) + self.bags[i]['bag_path']
 			yamlPath = roslib.packages.get_pkg_dir(self.PKG) + self.bags[i]['yaml_path']
-#			if(i==1):
-#				raise rospy.exceptions.ROSException("COB3 - has found no object!!%s"%bagPath, yamlPath)
 			inBag = yaml.load(open(yamlPath).read())
 			
 			
@@ -169,10 +167,13 @@ class TestObjectDetection(unittest.TestCase):
 			else:
 				rosbag_process = subprocess.Popen("rosbag play --clock %s" % bagPath, shell=True)
 			##out = rosbag_process.communicate()
-
 			rospy.wait_for_service('/object_detection/detect_object', 10)
-        		
-		# Alternative bagfile launching
+			
+			if(self.PKG == "cob_datamatrix"):
+
+		        	rospy.wait_for_service('/cobject_detection/trigger_datamatrix', 10)	
+
+			# Alternative bagfile launching
         		#bag_playback = Process(target=self.playback_bag, args=(bagPath,))
     			#bag_playback.start() 
 			
