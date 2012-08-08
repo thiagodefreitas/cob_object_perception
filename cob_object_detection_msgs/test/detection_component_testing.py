@@ -64,7 +64,7 @@ from math import fmod, pi
 import signal
 import types
 import unittest
-
+import commands
 import roslib
 roslib.load_manifest("cob_object_detection_msgs")
 
@@ -173,6 +173,11 @@ class TestObjectDetection(unittest.TestCase):
 
 		        	rospy.wait_for_service('/cobject_detection/trigger_datamatrix', 10)	
 
+			elif(self.PKG == "cob_object_detection"):
+				resultN = commands.getoutput("rosnode list")
+				resultS = commands.getoutput("rosservice list")
+				raise rospy.exceptions.ROSException("WHY?  %s"%resultN, resultS)
+	
 			# Alternative bagfile launching
         		#bag_playback = Process(target=self.playback_bag, args=(bagPath,))
     			#bag_playback.start() 
