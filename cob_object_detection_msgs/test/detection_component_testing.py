@@ -105,6 +105,19 @@ class TestObjectDetection(unittest.TestCase):
 		self.tolerance = 0.5
 		self.objID = None
 
+
+		if(self.PKG == "cob_datamatrix"):
+
+                	rospy.wait_for_service('/cobject_detection/trigger_datamatrix', 10)
+
+                elif(self.PKG == "cob_object_detection"):
+                	resultN = "NODES:" + commands.getoutput("rosnode list")
+			resultS = "SERVICES:"+ commands.getoutput("rosservice list")
+			resultT = "TOPICS:" + commands.getoutput("rostopic list")
+
+			rospy.wait_for_service("sensor_fusion/stereo/sensor_fusion/tf_frames", 10)
+
+
 	def updateTolerance(self, bag=0, chunk=0):
 
 		if("tolerance" in chunk):
@@ -169,20 +182,6 @@ class TestObjectDetection(unittest.TestCase):
 			##out = rosbag_process.communicate()
 			rospy.wait_for_service('/object_detection/detect_object', 10)
 			
-			if(self.PKG == "cob_datamatrix"):
-
-		        	rospy.wait_for_service('/cobject_detection/trigger_datamatrix', 10)	
-
-			elif(self.PKG == "cob_object_detection"):
-				resultN = commands.getoutput("rosnode list")
-				resultS = commands.getoutput("rosservice list")
-				raise rospy.exceptions.ROSException("WHY?  %s"%resultN, resultS)
-	
-			# Alternative bagfile launching
-        		#bag_playback = Process(target=self.playback_bag, args=(bagPath,))
-    			#bag_playback.start() 
-			
-        		
 			try:
 				objQTY = self.getNumberofObjects(inBag)
 				
