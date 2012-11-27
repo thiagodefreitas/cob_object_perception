@@ -104,6 +104,10 @@ class TestObjectDetection(unittest.TestCase):
 		self.bags = self.get_bags(self.bagfiles)
 		self.tolerance = 0.5
 		self.objID = None
+		self.elapsed_time = 0
+		self.start_time = 0
+		self.log_file = open("component_log.txt", "w")
+
 
 
 		if(self.PKG == "cob_datamatrix"):
@@ -166,7 +170,7 @@ class TestObjectDetection(unittest.TestCase):
 		return posX, posY, posZ
 
 	def object_detector(self):
-
+		self.start_time = rospy.rostime.get_time()
 		for i in range(len(self.bags)):
 			
 			bagPath = roslib.packages.get_pkg_dir(self.PKG) + self.bags[i]['bag_path']
@@ -184,7 +188,9 @@ class TestObjectDetection(unittest.TestCase):
 			
 			try:
 				objQTY = self.getNumberofObjects(inBag)
-				
+				not_detected = 0
+				detected = 0
+
 				for t in range(objQTY):
 
 					recognition_service = rospy.ServiceProxy('/object_detection/detect_object', DetectObjects)
@@ -212,26 +218,36 @@ class TestObjectDetection(unittest.TestCase):
 					
 			    # Get the Cartesian Coordinates positions for the detected objects
 				    		
-						for i in range(len(res.object_list.detections)):
+						for k in range(len(res.object_list.detections)):
 
-							positionX = res.object_list.detections[i].pose.pose.position.x
-							positionY = res.object_list.detections[i].pose.pose.position.y
-							positionZ = res.object_list.detections[i].pose.pose.position.z
+							positionX = res.object_list.detections[k].pose.pose.position.x
+							positionY = res.object_list.detections[k].pose.pose.position.y
+							positionZ = res.object_list.detections[k].pose.pose.position.z
 
 						# Test assertions for guaranteeing the correct loading of the Object Detection System Component
 							self.assertTrue(abs(positionX - posX) <= self.tolerance, "Failed on the x axis comparison%s"%addInfo)
 							self.assertTrue(abs(positionY - posY) <= self.tolerance, "Failed on the y axis comparison%s"%addInfo)
 							self.assertTrue(abs(positionZ - posZ) <= self.tolerance, "Failed on the z axis comparison%s"%addInfo)
 
-					self.assertTrue(objQTY == len(res.object_list.detections), "Number of objects in the Bagfiles are not equal to number of objects found%s"%addInfo)
+					detected+= len(res.object_list.detections)
+					#self.assertTrue(objQTY == len(res.object_list.detections), "Number of objects in the Bagfiles are not equal to number of objects found%s"%addInfo)
+				
+				if(objQTY!=detected):
+					not_detected = objQTY-detected
+				string_log = "{\"bagfile\":" + self.bags[i]['bag_path'] + ",\"detected\":"+(str)(detected) + ",\"not_detected\":"\
+					+(str)(not_detected) + "}"
 
+				self.log_file.write("%s\n" % string_log)
+			
 				
 			except rospy.ServiceException, e:
 				raise rospy.exceptions.ROSException("Service not available!!%s"%e)
-       
+
+
 			rosbag_process.send_signal(signal.SIGINT)
 			os.kill(rosbag_process.pid, signal.SIGKILL)
 			os.system("killall play")
+
 
 		# Alternative bagfile launching
 
@@ -240,6 +256,15 @@ class TestObjectDetection(unittest.TestCase):
         		#	bag_playback.terminate()
         		#	time.sleep(1)
         		#	rospy.loginfo('playback process terminated? %s' % str(not bag_playback.is_alive()))
+
+
+	 	self.elapsed_time = rospy.rostime.get_time() - self.start_time
+		
+		string_log = "{\"stack_name\":\"object_detection\",\"elapsed_time\":"+(str)(self.elapsed_time) + "}"
+
+		self.log_file.write("%s\n" % string_log)
+
+		self.log_file.close()
 
 	def test_object_detection(self):
   	
